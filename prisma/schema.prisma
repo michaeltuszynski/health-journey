@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  googleId      String    @unique @map("google_id")
+  imageUrl      String?   @map("image_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  journey       JourneyParameters?
+  meals         Meal[]
+  dailyLogs     DailyLog[]
+  measurements  Measurement[]
+
+  @@map("users")
+}
+
+model JourneyParameters {
+  id            String    @id @default(cuid())
+  userId        String    @unique @map("user_id")
+  birthDate     DateTime  @map("birth_date")
+  heightInches  Decimal   @map("height_inches") @db.Decimal(4,1)
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime  @map("end_date")
+  startWeight   Decimal   @map("start_weight") @db.Decimal(5,2)
+  targetWeight  Decimal   @map("target_weight") @db.Decimal(5,2)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@map("journey_parameters")
+}
+
+model Meal {
+  id                String    @id @default(cuid())
+  userId            String    @map("user_id")
+  name              String
+  category          MealCategory
+  caloriesPerServing Int      @map("calories_per_serving")
+  proteinGrams      Decimal?  @map("protein_grams") @db.Decimal(5,2)
+  carbsGrams        Decimal?  @map("carbs_grams") @db.Decimal(5,2)
+  fatGrams          Decimal?  @map("fat_grams") @db.Decimal(5,2)
+  defaultServings   Decimal   @default(1.0) @map("default_servings") @db.Decimal(3,1)
+  notes             String?
+  lastUsed          DateTime? @map("last_used")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  user              User      @relation(fields: [userId], references: [id])
+  dailyMeals        DailyMeal[]
+
+  @@map("meals")
+}
+
+model DailyLog {
+  id                  String    @id @default(cuid())
+  userId              String    @map("user_id")
+  date                DateTime  @db.Date
+  weight              Decimal?  @db.Decimal(5,2)
+  bmr                 Int?
+  dailyCalorieTarget  Int?      @map("daily_calorie_target")
+  totalCaloriesConsumed Int?    @map("total_calories_consumed")
+  moveCalories        Int?      @map("move_calories")
+  exerciseMinutes     Int?      @map("exercise_minutes")
+  standHours          Int?      @map("stand_hours")
+  waterCups           Decimal?  @map("water_cups") @db.Decimal(3,1)
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  user                User      @relation(fields: [userId], references: [id])
+  dailyMeals          DailyMeal[]
+
+  @@unique([userId, date])
+  @@map("daily_logs")
+}
+
+model DailyMeal {
+  id           String    @id @default(cuid())
+  dailyLogId   String    @map("daily_log_id")
+  mealId       String    @map("meal_id")
+  servings     Decimal   @db.Decimal(3,1)
+  category     MealCategory
+  createdAt    DateTime  @default(now()) @map("created_at")
+  dailyLog     DailyLog  @relation(fields: [dailyLogId], references: [id])
+  meal         Meal      @relation(fields: [mealId], references: [id])
+
+  @@map("daily_meals")
+}
+
+model Measurement {
+  id                String    @id @default(cuid())
+  userId            String    @map("user_id")
+  date              DateTime  @db.Date
+  weight            Decimal   @db.Decimal(5,2)
+  bodyFatPercentage Decimal?  @map("body_fat_percentage") @db.Decimal(4,1)
+  chestInches       Decimal?  @map("chest_inches") @db.Decimal(4,1)
+  waistInches       Decimal?  @map("waist_inches") @db.Decimal(4,1)
+  hipsInches        Decimal?  @map("hips_inches") @db.Decimal(4,1)
+  bicepsInches      Decimal?  @map("biceps_inches") @db.Decimal(4,1)
+  thighsInches      Decimal?  @map("thighs_inches") @db.Decimal(4,1)
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  user              User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("measurements")
+}
+
+enum MealCategory {
+  Breakfast
+  Lunch
+  Dinner
+  Snack
+}
