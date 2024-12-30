@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@auth/prisma-adapter": "^2.7.4",
     "@prisma/client": "^6.1.0",
     "@tanstack/react-query": "^5.62.11",
     "@vercel/postgres": "^0.10.0",
